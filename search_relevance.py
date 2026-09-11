@@ -1,6 +1,7 @@
 import argparse
 import json
 import re
+import sys
 from contextlib import nullcontext
 from dataclasses import asdict, dataclass
 from typing import Any
@@ -131,8 +132,6 @@ class GemmaRelevanceClassifier:
     def predict(self, query: str, goods_info: str) -> RelevancePrediction:
         prompt = self._build_prompt(query, goods_info)
         inputs = self.tokenizer(prompt, return_tensors="pt")
-        if hasattr(inputs, "to") and hasattr(self.model, "device"):
-            inputs = inputs.to(self.model.device)
 
         generation_kwargs: dict[str, Any] = {
             "max_new_tokens": self.max_new_tokens,
@@ -179,7 +178,7 @@ def predict_relevance_label(
     return classifier.predict(query, goods_info).label
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Predict a search relevance label with Gemma.")
     parser.add_argument("--query", required=True, help="Search query text.")
     parser.add_argument("--goods-info", required=True, help="Product or goods description.")
@@ -200,7 +199,7 @@ def main() -> None:
         default=0.0,
         help="Sampling temperature. Use 0 for deterministic decoding.",
     )
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     if args.temperature < 0:
         parser.error("--temperature must be greater than or equal to 0.")
 
@@ -214,4 +213,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])

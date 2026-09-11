@@ -1,9 +1,11 @@
 import unittest
+from unittest import mock
 
 from search_relevance import (
     DEFAULT_MODEL_NAME,
     GemmaRelevanceClassifier,
     build_messages,
+    main,
     normalize_label,
 )
 
@@ -80,6 +82,22 @@ class SearchRelevanceTests(unittest.TestCase):
             "Provide both model and tokenizer together, or omit both.",
         ):
             GemmaRelevanceClassifier(model=FakeModel())
+
+    def test_main_rejects_negative_temperature(self):
+        with self.assertRaises(SystemExit) as context:
+            with mock.patch("sys.stderr"):
+                main(
+                    [
+                        "--query",
+                        "running shoes",
+                        "--goods-info",
+                        "Sports socks",
+                        "--temperature",
+                        "-0.1",
+                    ]
+                )
+
+        self.assertEqual(context.exception.code, 2)
 
 
 if __name__ == "__main__":
