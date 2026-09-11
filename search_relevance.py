@@ -59,6 +59,12 @@ def normalize_relevance_label(value: str) -> RelevanceLabel:
 def predict_relevance_label(
     model: GenerativeModel | Callable[[str], str], query: str, candidate: str
 ) -> RelevanceLabel:
+    """Predict a relevance label from a generative model response.
+
+    If ``model`` defines a callable ``generate(prompt)`` method, that interface
+    is used. Otherwise, ``model`` itself must be callable and will be invoked
+    with the prompt.
+    """
     prompt = build_relevance_prompt(query=query, candidate=candidate)
     generate = getattr(model, "generate", None)
 

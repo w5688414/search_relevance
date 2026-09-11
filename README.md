@@ -24,3 +24,6 @@ label = predict_relevance_label(
     candidate="wireless mouse",
 )
 ```
+
+If a model object exposes both `generate(prompt)` and `__call__(prompt)`,
+`predict_relevance_label()` uses `generate(prompt)` first.
