@@ -56,10 +56,13 @@ def predict_relevance_label(
     model: GenerativeModel | Callable[[str], str], query: str, candidate: str
 ) -> RelevanceLabel:
     prompt = build_relevance_prompt(query=query, candidate=candidate)
+    generate = getattr(model, "generate", None)
 
-    if hasattr(model, "generate"):
-        response = model.generate(prompt)
-    else:
+    if callable(generate):
+        response = generate(prompt)
+    elif callable(model):
         response = model(prompt)
+    else:
+        raise TypeError("model must define a callable generate(prompt) method or be callable")
 
     return normalize_relevance_label(response)

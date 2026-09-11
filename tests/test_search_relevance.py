@@ -18,6 +18,10 @@ class FakeModel:
         return self.response
 
 
+class InvalidModel:
+    generate = "not-callable"
+
+
 class SearchRelevanceTests(unittest.TestCase):
     def test_prompt_includes_supported_labels(self) -> None:
         prompt = build_relevance_prompt("iphone charger", "USB-C wall charger")
@@ -49,6 +53,14 @@ class SearchRelevanceTests(unittest.TestCase):
         )
 
         self.assertEqual(label, RelevanceLabel.EXACTLY_SATISFIED)
+
+    def test_predict_relevance_label_rejects_invalid_model_object(self) -> None:
+        with self.assertRaisesRegex(TypeError, "model must define a callable generate"):
+            predict_relevance_label(
+                model=InvalidModel(),
+                query="desk lamp",
+                candidate="office chair",
+            )
 
     def test_normalize_relevance_label_extracts_label_from_sentence(self) -> None:
         label = normalize_relevance_label("The best label is Substitute.")
