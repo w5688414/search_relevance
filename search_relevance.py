@@ -86,6 +86,9 @@ class GemmaRelevanceClassifier:
         model: Any | None = None,
         tokenizer: Any | None = None,
     ) -> None:
+        if (model is None) != (tokenizer is None):
+            raise ValueError("Provide both model and tokenizer together, or omit both.")
+
         self.model_name = model_name
         self.max_new_tokens = max_new_tokens
         self.temperature = temperature
@@ -198,6 +201,8 @@ def main() -> None:
         help="Sampling temperature. Use 0 for deterministic decoding.",
     )
     args = parser.parse_args()
+    if args.temperature < 0:
+        parser.error("--temperature must be greater than or equal to 0.")
 
     classifier = GemmaRelevanceClassifier(
         model_name=args.model,

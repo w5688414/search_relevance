@@ -74,6 +74,13 @@ class SearchRelevanceTests(unittest.TestCase):
         self.assertEqual(prediction.query, "running shoes")
         self.assertEqual(prediction.goods_info, "Sports socks")
 
+    def test_constructor_requires_both_injected_dependencies(self):
+        with self.assertRaisesRegex(
+            ValueError,
+            "Provide both model and tokenizer together, or omit both.",
+        ):
+            GemmaRelevanceClassifier(model=FakeModel())
+
 
 if __name__ == "__main__":
     unittest.main()
