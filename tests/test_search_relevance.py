@@ -22,6 +22,20 @@ class InvalidModel:
     generate = "not-callable"
 
 
+class HybridModel:
+    def __init__(self) -> None:
+        self.used_generate = False
+        self.used_call = False
+
+    def generate(self, prompt: str) -> str:
+        self.used_generate = True
+        return "Complement"
+
+    def __call__(self, prompt: str) -> str:
+        self.used_call = True
+        return "Irrelevant"
+
+
 class SearchRelevanceTests(unittest.TestCase):
     def test_prompt_includes_supported_labels(self) -> None:
         prompt = build_relevance_prompt("iphone charger", "USB-C wall charger")
@@ -61,6 +75,19 @@ class SearchRelevanceTests(unittest.TestCase):
                 query="desk lamp",
                 candidate="office chair",
             )
+
+    def test_predict_relevance_label_prefers_generate_over_call(self) -> None:
+        model = HybridModel()
+
+        label = predict_relevance_label(
+            model=model,
+            query="gaming console",
+            candidate="extra controller",
+        )
+
+        self.assertEqual(label, RelevanceLabel.COMPLEMENT)
+        self.assertTrue(model.used_generate)
+        self.assertFalse(model.used_call)
 
     def test_normalize_relevance_label_extracts_label_from_sentence(self) -> None:
         label = normalize_relevance_label("The best label is Substitute.")
