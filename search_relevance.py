@@ -50,6 +50,10 @@ def normalize_relevance_label(value: str) -> RelevanceLabel:
 
     if len(matches) == 1:
         return matches.pop()
+    if len(matches) > 1:
+        raise ValueError(
+            f"Ambiguous relevance label {value!r}. Expected exactly one of: {', '.join(VALID_RELEVANCE_LABELS)}."
+        )
 
     raise ValueError(
         f"Unsupported relevance label {value!r}. Expected one of: {', '.join(VALID_RELEVANCE_LABELS)}."
