@@ -133,7 +133,11 @@ class GemmaRelevanceClassifier:
 
         generation_kwargs: dict[str, Any] = {
             "max_new_tokens": self.max_new_tokens,
-            "pad_token_id": self.tokenizer.pad_token_id or self.tokenizer.eos_token_id,
+            "pad_token_id": (
+                self.tokenizer.pad_token_id
+                if self.tokenizer.pad_token_id is not None
+                else self.tokenizer.eos_token_id
+            ),
             "do_sample": self.temperature > 0,
         }
         if self.temperature > 0:
