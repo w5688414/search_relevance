@@ -11,7 +11,10 @@ from search_relevance import (
 
 
 class FakeInputs(dict):
+    last_device = None
+
     def to(self, _device):
+        self.last_device = _device
         return self
 
 
@@ -48,7 +51,11 @@ class FakeTokenizer:
 class FakeModel:
     device = "cpu"
 
+    def __init__(self):
+        self.last_generate_kwargs = None
+
     def generate(self, **_kwargs):
+        self.last_generate_kwargs = _kwargs
         return [[10, 20, 30, 40, 50]]
 
 
@@ -64,10 +71,15 @@ class SearchRelevanceTests(unittest.TestCase):
         self.assertEqual(normalize_label("substitute"), "Substitute")
         self.assertEqual(normalize_label("This looks irrelevant to the query."), "Irrelevant")
 
+    def test_normalize_label_rejects_unknown_output(self):
+        with self.assertRaisesRegex(ValueError, "Expected one of"):
+            normalize_label("No supported label found here")
+
     def test_predict_returns_normalized_label(self):
+        model = FakeModel()
         classifier = GemmaRelevanceClassifier(
             model_name=DEFAULT_MODEL_NAME,
-            model=FakeModel(),
+            model=model,
             tokenizer=FakeTokenizer(),
         )
         prediction = classifier.predict("running shoes", "Sports socks")
@@ -75,6 +87,22 @@ class SearchRelevanceTests(unittest.TestCase):
         self.assertEqual(prediction.label, "Complement")
         self.assertEqual(prediction.query, "running shoes")
         self.assertEqual(prediction.goods_info, "Sports socks")
+        self.assertFalse(model.last_generate_kwargs["do_sample"])
+
+    def test_predict_enables_sampling_for_positive_temperature(self):
+        model = FakeModel()
+        classifier = GemmaRelevanceClassifier(
+            model_name=DEFAULT_MODEL_NAME,
+            model=model,
+            tokenizer=FakeTokenizer(),
+            temperature=0.7,
+        )
+
+        classifier.predict("running shoes", "Sports socks")
+
+        self.assertTrue(model.last_generate_kwargs["do_sample"])
+        self.assertEqual(model.last_generate_kwargs["temperature"], 0.7)
+        self.assertEqual(model.last_generate_kwargs["top_p"], 0.9)
 
     def test_constructor_requires_both_injected_dependencies(self):
         with self.assertRaisesRegex(

@@ -96,6 +96,7 @@ class GemmaRelevanceClassifier:
         self.model = model
         self.tokenizer = tokenizer
         self._torch = None
+        self._input_device = None
 
         if self.model is None or self.tokenizer is None:
             self._load_runtime()
@@ -110,13 +111,34 @@ class GemmaRelevanceClassifier:
             self.tokenizer.pad_token = self.tokenizer.eos_token
 
         model_kwargs: dict[str, Any] = {}
-        if torch.cuda.is_available():
+        preferred_device = self._select_device(torch)
+        if preferred_device == "cuda":
             model_kwargs["device_map"] = "auto"
             model_kwargs["torch_dtype"] = (
                 torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
             )
+        elif preferred_device in {"mps", "xpu"}:
+            model_kwargs["torch_dtype"] = torch.float16
 
         self.model = AutoModelForCausalLM.from_pretrained(self.model_name, **model_kwargs)
+        if preferred_device in {"mps", "xpu"}:
+            self._input_device = torch.device(preferred_device)
+            self.model = self.model.to(self._input_device)
+
+    @staticmethod
+    def _select_device(torch: Any) -> str | None:
+        if torch.cuda.is_available():
+            return "cuda"
+
+        mps_backend = getattr(torch.backends, "mps", None)
+        if mps_backend is not None and mps_backend.is_available():
+            return "mps"
+
+        xpu_runtime = getattr(torch, "xpu", None)
+        if xpu_runtime is not None and xpu_runtime.is_available():
+            return "xpu"
+
+        return None
 
     def _build_prompt(self, query: str, goods_info: str) -> str:
         messages = build_messages(query, goods_info)
@@ -132,6 +154,8 @@ class GemmaRelevanceClassifier:
     def predict(self, query: str, goods_info: str) -> RelevancePrediction:
         prompt = self._build_prompt(query, goods_info)
         inputs = self.tokenizer(prompt, return_tensors="pt")
+        if self._input_device is not None and hasattr(inputs, "to"):
+            inputs = inputs.to(self._input_device)
 
         generation_kwargs: dict[str, Any] = {
             "max_new_tokens": self.max_new_tokens,
