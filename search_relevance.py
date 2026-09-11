@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from enum import StrEnum
+import re
 from typing import Callable, Protocol
 
 
@@ -37,9 +38,14 @@ def normalize_relevance_label(value: str) -> RelevanceLabel:
         if normalized.casefold() == label.value.casefold():
             return label
 
-    for label in RelevanceLabel:
-        if label.value.casefold() in normalized.casefold():
-            return label
+    matches = {
+        label
+        for label in RelevanceLabel
+        if re.search(rf"\b{re.escape(label.value)}\b", normalized, flags=re.IGNORECASE)
+    }
+
+    if len(matches) == 1:
+        return matches.pop()
 
     raise ValueError(
         f"Unsupported relevance label {value!r}. Expected one of: {', '.join(VALID_RELEVANCE_LABELS)}."

@@ -55,6 +55,10 @@ class SearchRelevanceTests(unittest.TestCase):
 
         self.assertEqual(label, RelevanceLabel.SUBSTITUTE)
 
+    def test_normalize_relevance_label_rejects_ambiguous_sentence(self) -> None:
+        with self.assertRaisesRegex(ValueError, "Unsupported relevance label"):
+            normalize_relevance_label("Substitute or Complement")
+
     def test_predict_relevance_label_rejects_unknown_label(self) -> None:
         with self.assertRaisesRegex(ValueError, "Unsupported relevance label"):
             predict_relevance_label(
