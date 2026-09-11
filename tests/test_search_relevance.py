@@ -67,6 +67,11 @@ class SearchRelevanceTests(unittest.TestCase):
 
         self.assertEqual(label, RelevanceLabel.SUBSTITUTE)
 
+    def test_normalize_relevance_label_handles_punctuation_wrapped_label(self) -> None:
+        label = normalize_relevance_label('"Exactly Satisfied."')
+
+        self.assertEqual(label, RelevanceLabel.EXACTLY_SATISFIED)
+
     def test_normalize_relevance_label_rejects_ambiguous_sentence(self) -> None:
         with self.assertRaisesRegex(ValueError, "Unsupported relevance label"):
             normalize_relevance_label("Substitute or Complement")

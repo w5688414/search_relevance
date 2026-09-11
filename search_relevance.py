@@ -41,7 +41,11 @@ def normalize_relevance_label(value: str) -> RelevanceLabel:
     matches = {
         label
         for label in RelevanceLabel
-        if re.search(rf"\b{re.escape(label.value)}\b", normalized, flags=re.IGNORECASE)
+        if re.search(
+            rf"(?<![A-Za-z0-9]){re.escape(label.value)}(?![A-Za-z0-9])",
+            normalized,
+            flags=re.IGNORECASE,
+        )
     }
 
     if len(matches) == 1:
