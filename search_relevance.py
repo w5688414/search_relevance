@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from enum import StrEnum
+from enum import Enum
 import re
 from typing import Callable, Protocol
 
 
-class RelevanceLabel(StrEnum):
+class RelevanceLabel(str, Enum):
     EXACTLY_SATISFIED = "Exactly Satisfied"
     SUBSTITUTE = "Substitute"
     COMPLEMENT = "Complement"
